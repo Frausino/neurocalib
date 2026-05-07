@@ -84,7 +84,7 @@ skips = ["B101"]    # assert em tests
 # ── Pytest ──────────────────────────────────────────────────────────
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=src --cov-report=term-missing -q"
+addopts = "--cov=src --cov-report=xml -q"
 
 # ── uv sources para CUDA ─────────────────────────────────────────────
 # ⚠️  Descomente quando for adicionar torch com CUDA 12.8 (S10)
