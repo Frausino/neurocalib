@@ -39,3 +39,5 @@ Thumbs.db
 "@ | Set-Content .gitignore -Encoding UTF8
 
 dev.ps1
+
+sbom*.json

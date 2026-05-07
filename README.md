@@ -58,15 +58,19 @@ pre-commit install
 
 ## Uso rápido
 
-```bash
-make all        # lint + test — GO/NO-GO check
-make test       # pytest com cobertura
-make lint       # pre-commit em todos os arquivos
-make mlflow-ui  # MLflow UI em localhost:5000
-make sbom       # gera SBOM CycloneDX local
+```powershell
+# lint + test — GO/NO-GO check
+uv run pre-commit run --all-files
+uv run pytest --cov=src --cov-report=term-missing -q
+
+# MLflow UI em localhost:5000
+uv run mlflow ui --port 5000
+
+# SBOM CycloneDX local
+uv run cyclonedx-py environment --output-format JSON -o sbom.json
 ```
 
----
+> Em Linux/macOS: `make all`, `make test`, `make mlflow-ui` (requer `make` instalado).
 
 ## DevSecOps
 
