@@ -1,0 +1,94 @@
+# pyproject.toml
+[project]
+name = "bci-calib"
+version = "0.1.0"
+description = "Calibração Probabilística Dependente do Estado Autonômico com EEG e HRV"
+authors = [{ name = "Davi Rosa F.", email = "seu@email.com" }]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.0",
+    "structlog>=24.0",
+    "typer>=0.12",
+    "scipy>=1.13",
+    "numpy>=1.26",
+    "scikit-learn>=1.5",
+    "mne>=1.7",
+    "moabb>=1.1",
+    "pyriemann>=0.7",
+    "neurokit2>=0.2",
+    "mlflow>=2.15",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+]
+
+[project.optional-dependencies]
+dl = [
+    "torch>=2.4",
+    "braindecode>=0.8",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "hypothesis>=6.110",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "bandit[toml]>=1.7",
+    "pip-audit>=2.7",
+    "pre-commit>=3.8",
+    "cyclonedx-bom>=4.4",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/bci_calib"]
+
+# ── Ruff ────────────────────────────────────────────────────────────
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "B", "S"]
+ignore = ["S101"]   # assert permitido em tests
+
+# ── Mypy ────────────────────────────────────────────────────────────
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+# OBRIGATÓRIO — sem isso mypy quebra no CI para todas essas libs
+[[tool.mypy.overrides]]
+module = [
+    "mne.*",
+    "moabb.*",
+    "braindecode.*",
+    "pyriemann.*",
+    "neurokit2.*",
+    "mlflow.*",
+    "sklearn.*",
+    "scipy.*",
+]
+ignore_missing_imports = true
+
+# ── Bandit ──────────────────────────────────────────────────────────
+[tool.bandit]
+targets = ["src"]
+skips = ["B101"]    # assert em tests
+
+# ── Pytest ──────────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]   # FIX: permite 'import bci_calib' no CI (src layout)
+addopts = "--cov=src --cov-report=xml -q"
+
+# ── uv sources para CUDA ─────────────────────────────────────────────
+# Descomentar em S10 quando adicionar torch com CUDA 12.8
+# [[tool.uv.sources]]
+# torch = { index = "https://download.pytorch.org/whl/cu128" }
