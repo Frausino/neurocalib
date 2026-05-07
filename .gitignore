@@ -1,0 +1,39 @@
+# .gitignore
+@"
+# Ambiente virtual
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Ferramentas
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+coverage.xml
+.coverage
+
+# MLflow
+mlruns/
+
+# Dados — nunca versionar EEG/ECG bruto
+data/raw/
+data/external/
+
+# AuditDB — só o schema vai no git, não o banco
+logs/audit.db
+logs/*.db
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# OS
+Thumbs.db
+"@ | Set-Content .gitignore -Encoding UTF8
