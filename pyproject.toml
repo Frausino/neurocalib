@@ -36,6 +36,7 @@ dev = [
     "bandit[toml]>=1.7",
     "pip-audit>=2.7",
     "pre-commit>=3.8",
+    "cyclonedx-bom>=4.4",
 ]
 
 [build-system]
@@ -62,7 +63,7 @@ strict = true
 warn_return_any = true
 warn_unused_configs = true
 
-# ⚠️  OBRIGATÓRIO — sem isso mypy quebra no CI para todas essas libs
+# OBRIGATÓRIO — sem isso mypy quebra no CI para todas essas libs
 [[tool.mypy.overrides]]
 module = [
     "mne.*",
@@ -84,9 +85,10 @@ skips = ["B101"]    # assert em tests
 # ── Pytest ──────────────────────────────────────────────────────────
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src"]   # FIX: permite 'import bci_calib' no CI (src layout)
 addopts = "--cov=src --cov-report=xml -q"
 
 # ── uv sources para CUDA ─────────────────────────────────────────────
-# ⚠️  Descomente quando for adicionar torch com CUDA 12.8 (S10)
+# Descomentar em S10 quando adicionar torch com CUDA 12.8
 # [[tool.uv.sources]]
 # torch = { index = "https://download.pytorch.org/whl/cu128" }

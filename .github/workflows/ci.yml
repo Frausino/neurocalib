@@ -41,3 +41,15 @@ jobs:
         with:
           file: coverage.xml
         continue-on-error: true # não bloqueia CI se Codecov offline
+
+      - name: Generate SBOM (CycloneDX)
+        run: |
+          uv run cyclonedx-py environment \
+            --output-format JSON \
+            --outfile sbom-py${{ matrix.python-version }}.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-python-${{ matrix.python-version }}
+          path: sbom-py${{ matrix.python-version }}.json

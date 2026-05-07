@@ -37,3 +37,5 @@ logs/*.db
 # OS
 Thumbs.db
 "@ | Set-Content .gitignore -Encoding UTF8
+
+dev.ps1
