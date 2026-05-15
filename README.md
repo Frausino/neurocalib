@@ -1,5 +1,7 @@
 # BCI-Calib
 
+🇧🇷 Português: [README.pt-BR.md](README.pt-BR.md)
+
 [![CI](https://github.com/Frausino/bci-calib/actions/workflows/ci.yml/badge.svg)](https://github.com/Frausino/bci-calib/actions)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -11,13 +13,13 @@ This project investigates whether autonomic nervous system dynamics can improve 
 
 The repository is designed as a reproducible research engineering platform integrating:
 
-* probabilistic calibration
-* EEG signal processing
-* HRV physiological modulation
-* experiment tracking
-* DevSecOps
-* Clean Architecture
-* deterministic ML pipelines
+- probabilistic calibration
+- EEG signal processing
+- HRV physiological modulation
+- experiment tracking
+- DevSecOps
+- Clean Architecture
+- deterministic ML pipelines
 
 PIC IAR/CEUB 2026–2027.
 
@@ -37,9 +39,9 @@ Central formulation:
 
 where:
 
-* (r_t) = normalized autonomic state derived from RMSSD
-* (\sigma) = sigmoid activation
-* (\tau) = dynamic calibration temperature
+- \(r_t\) = normalized autonomic state derived from RMSSD
+- \(\sigma\) = sigmoid activation
+- \(\tau\) = dynamic calibration temperature
 
 Normalized physiological state:
 
@@ -49,10 +51,10 @@ r_t = \frac{RMSSD_{smooth,t} - \mu_{train}}{\sigma_{train}}
 
 Main evaluation metrics:
 
-* Expected Calibration Error (ECE)
-* Brier Score
-* Calibration Curves
-* Negative Log Likelihood (NLL)
+- Expected Calibration Error (ECE)
+- Brier Score
+- Calibration Curves
+- Negative Log Likelihood (NLL)
 
 ---
 
@@ -60,10 +62,10 @@ Main evaluation metrics:
 
 The repository follows Clean Architecture principles to isolate:
 
-* scientific domain logic
-* experiment orchestration
-* infrastructure adapters
-* presentation interfaces
+- scientific domain logic
+- experiment orchestration
+- infrastructure adapters
+- presentation interfaces
 
 ```text
 src/bci_calib/
@@ -75,12 +77,12 @@ src/bci_calib/
 
 ## Architectural Goals
 
-* reproducibility
-* modular experimentation
-* framework isolation
-* deterministic environments
-* maintainability
-* scientific traceability
+- reproducibility
+- modular experimentation
+- framework isolation
+- deterministic environments
+- maintainability
+- scientific traceability
 
 ---
 
@@ -265,18 +267,18 @@ Experiments are tracked using MLflow.
 
 Tracked artifacts include:
 
-* hyperparameters
-* calibration metrics
-* preprocessing parameters
-* model outputs
-* evaluation curves
-* experiment metadata
+- hyperparameters
+- calibration metrics
+- preprocessing parameters
+- model outputs
+- evaluation curves
+- experiment metadata
 
 Future integration roadmap includes:
 
-* benchmark dashboards
-* experiment lineage
-* comparative calibration studies
+- benchmark dashboards
+- experiment lineage
+- comparative calibration studies
 
 ---
 
@@ -336,19 +338,19 @@ DAY_PROTOCOL.md
 
 ## Calibration
 
-* Guo et al. (2017) — On Calibration of Modern Neural Networks
+- Guo et al. (2017) — On Calibration of Modern Neural Networks
 
 ## BCI and Riemannian Geometry
 
-* Barachant et al. (2012) — Multiclass Brain-Computer Interface Classification by Riemannian Geometry
+- Barachant et al. (2012) — Multiclass Brain-Computer Interface Classification by Riemannian Geometry
 
 ## HRV Physiology
 
-* Shaffer & Ginsberg (2017) — An Overview of Heart Rate Variability Metrics and Norms
+- Shaffer & Ginsberg (2017) — An Overview of Heart Rate Variability Metrics and Norms
 
 ## Benchmarking
 
-* Chevallier et al. (2024) — MOABB: Trustworthy Algorithm Benchmarking for BCIs
+- Chevallier et al. (2024) — MOABB: Trustworthy Algorithm Benchmarking for BCIs
 
 ---
 
@@ -356,20 +358,21 @@ DAY_PROTOCOL.md
 
 This repository is:
 
-* research software
-* not certified medical software
-* not intended for clinical diagnosis or treatment
+- research software
+- not certified medical software
+- not intended for clinical diagnosis or treatment
 
 No identifiable participant physiological data is distributed in this repository.
 
 All future human-subject experiments must comply with:
 
-* LGPD
-* institutional ethics approval
-* anonymization requirements
+- LGPD
+- institutional ethics approval
+- anonymization requirements
 
 ---
 
 # License
 
 MIT License.
+
