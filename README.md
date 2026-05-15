@@ -376,3 +376,116 @@ All future human-subject experiments must comply with:
 
 MIT License.
 
+Experiments are tracked using MLflow.
+
+Tracked artifacts include:
+
+- hyperparameters
+- calibration metrics
+- preprocessing parameters
+- model outputs
+- evaluation curves
+- experiment metadata
+
+Future integration roadmap includes:
+
+- benchmark dashboards
+- experiment lineage
+- comparative calibration studies
+
+---
+
+# Governance
+
+## Architecture Decisions
+
+Documented in:
+
+```text
+docs/adr/
+```
+
+## Security
+
+See:
+
+```text
+SECURITY.md
+```
+
+## Research Reproducibility
+
+Operational standards are defined in:
+
+```text
+DAY_PROTOCOL.md
+```
+
+---
+
+# DevSecOps
+
+| Area              | Tool           |
+| ----------------- | -------------- |
+| Static Analysis   | Ruff           |
+| Security Analysis | bandit         |
+| Secret Detection  | gitleaks       |
+| Dependency Audit  | pip-audit      |
+| SBOM Generation   | CycloneDX      |
+| CI Validation     | GitHub Actions |
+
+---
+
+# Roadmap
+
+| Phase    | Objective                                     | Status      |
+| -------- | --------------------------------------------- | ----------- |
+| Phase 1  | Infrastructure and governance                 | In Progress |
+| Phase 2A | Synthetic benchmark pipeline                  | Planned     |
+| Phase 2B | Experimental physiological collection         | Planned     |
+| Phase 3  | Scientific manuscript and platform validation | Planned     |
+
+---
+
+# References
+
+## Calibration
+
+- Guo et al. (2017) — On Calibration of Modern Neural Networks
+
+## BCI and Riemannian Geometry
+
+- Barachant et al. (2012) — Multiclass Brain-Computer Interface Classification by Riemannian Geometry
+
+## HRV Physiology
+
+- Shaffer & Ginsberg (2017) — An Overview of Heart Rate Variability Metrics and Norms
+
+## Benchmarking
+
+- Chevallier et al. (2024) — MOABB: Trustworthy Algorithm Benchmarking for BCIs
+
+---
+
+# Disclaimer
+
+This repository is:
+
+- research software
+- not certified medical software
+- not intended for clinical diagnosis or treatment
+
+No identifiable participant physiological data is distributed in this repository.
+
+All future human-subject experiments must comply with:
+
+- LGPD
+- institutional ethics approval
+- anonymization requirements
+
+---
+
+# License
+
+MIT License.
+
