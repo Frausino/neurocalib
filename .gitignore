@@ -21,6 +21,7 @@ coverage.xml
 
 # MLflow
 mlruns/
+mlflow.db
 
 # Dados — nunca versionar EEG/ECG bruto
 data/raw/
