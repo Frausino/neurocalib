@@ -1,0 +1,89 @@
+# .github/workflows/weekly-audit.yml
+# Weekly Audit (Auditoria Semanal, AS) for bci-calib.
+#
+# PURPOSE: Run every Monday at 06:00 UTC to verify that:
+#   1. The AuditDB schema matches the Definition of Done: 4 tables, 5 views.
+#   2. All unit tests in tests/tracking/ pass.
+#   3. No failed runs were logged in the past 7 days (advisory, non-blocking).
+#
+# References
+# ----------
+# GitHub Actions schedule syntax:
+#   https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
+# astral-sh/setup-uv@v3:
+#   https://github.com/astral-sh/setup-uv
+
+name: Weekly Audit
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"   # Every Monday at 06:00 UTC
+  workflow_dispatch:        # Manual trigger from GitHub UI or gh CLI
+
+jobs:
+  audit:
+    name: AuditDB + Tracking Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Assert schema integrity (4 tables, 5 views)
+        # Uses :memory: for speed. Note: WAL journal mode is only available for
+        # file-based databases; :memory: databases use 'memory' mode by design.
+        # WAL is tested in tests/tracking/test_audit_db.py via file_db fixture.
+        run: |
+          uv run python - <<'EOF'
+          from bci_calib.infrastructure.tracking.audit_db import AuditDB
+
+          db = AuditDB(":memory:")
+          db.initialise()
+
+          tables = db.table_count()
+          views  = db.view_count()
+
+          assert tables == 4, f"FAIL: expected 4 tables, got {tables}"
+          assert views  == 5, f"FAIL: expected 5 views, got {views}"
+
+          print(f"PASS: {tables} tables | {views} views")
+          EOF
+
+      - name: Run tracking unit tests
+        run: uv run pytest tests/tracking/ -v --tb=short
+
+      - name: Check for failed runs in audit.db (advisory)
+        run: |
+          uv run python - <<'EOF'
+          import sys
+          from pathlib import Path
+          from bci_calib.infrastructure.tracking.audit_db import AuditDB
+
+          db_path = Path("audit.db")
+          if not db_path.exists():
+              print("INFO: audit.db not present in workspace — skipping.")
+              sys.exit(0)
+
+          db = AuditDB(db_path)
+          with db.connection() as conn:
+              rows = conn.execute(
+                  "SELECT run_id, experiment_name, correlation_id, started_at"
+                  " FROM v_failed_runs"
+                  " WHERE started_at >= datetime('now', '-7 days')"
+              ).fetchall()
+
+          if rows:
+              print(f"WARNING: {len(rows)} failed run(s) in the last 7 days:")
+              for r in rows:
+                  print(f"  {r['correlation_id']}  ({r['experiment_name']})  {r['started_at']}")
+          else:
+              print("OK: no failed runs in the last 7 days.")
+          EOF

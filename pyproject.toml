@@ -3,7 +3,7 @@
 name = "bci-calib"
 version = "0.1.0"
 description = "Calibração Probabilística Dependente do Estado Autonômico com EEG e HRV"
-authors = [{ name = "Davi Rosa F.", email = "seu@email.com" }]
+authors = [{ name = "Davi Rosa F.", email = "davi.rosa@sempreceub.com" }]
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -77,6 +77,10 @@ module = [
 ]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_decorators = false
+
 # ── Bandit ──────────────────────────────────────────────────────────
 [tool.bandit]
 targets = ["src"]
@@ -85,7 +89,7 @@ skips = ["B101"]    # assert em tests
 # ── Pytest ──────────────────────────────────────────────────────────
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]   # FIX: permite 'import bci_calib' no CI (src layout)
+pythonpath = ["src","."]   # FIX: permite 'import bci_calib' no CI (src layout)
 addopts = "--cov=src --cov-report=xml -q"
 
 # ── uv sources para CUDA ─────────────────────────────────────────────

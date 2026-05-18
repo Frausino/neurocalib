@@ -1,5 +1,5 @@
 set shell := ["powershell.exe", "-Command"]
-
+export PYTHONPATH := "src"
 default:
     just --list
 
@@ -42,7 +42,7 @@ ci:
     just all
 
 mlflow-ui:
-    uv run mlflow ui --port 5000
+    uv run mlflow ui --port 5001
 
 clean:
     if (Test-Path ".coverage") { Remove-Item .coverage -Force }
@@ -55,3 +55,10 @@ clean:
 
 help:
     just --listjust --list
+
+audit-init:
+    uv run python -c "from bci_calib.infrastructure.tracking.audit_db import AuditDB; db = AuditDB('audit.db'); db.initialise(); assert db.table_count() == 4; assert db.view_count() == 5; print(f'OK: {db.table_count()} tables | {db.view_count()} views')"
+
+test-tracking:
+    uv run pytest tests/tracking/ -v --tb=short
+

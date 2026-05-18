@@ -1,4 +1,4 @@
-# DAY PROTOCOL — BCI-CALIB
+git add .# DAY PROTOCOL — BCI-CALIB
 
 Operational development workflow for reproducible research engineering.
 
