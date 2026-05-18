@@ -1,4 +1,4 @@
-# BCI-Calib
+# NEUROCALIB
 
 [![CI](https://github.com/Frausino/bci-calib/actions/workflows/ci.yml/badge.svg)](https://github.com/Frausino/bci-calib/actions)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org)
