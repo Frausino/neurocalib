@@ -311,7 +311,7 @@ requires-dist = [
     { name = "mlflow", specifier = ">=2.15" },
     { name = "mne", specifier = ">=1.7" },
     { name = "moabb", specifier = ">=1.1" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.11" },
+    { name = "mypy", marker = "extra == 'dev'", specifier = ">=2.0" },
     { name = "neurokit2", specifier = ">=0.2" },
     { name = "numpy", specifier = ">=1.26" },
     { name = "pip-audit", marker = "extra == 'dev'", specifier = ">=2.7" },
