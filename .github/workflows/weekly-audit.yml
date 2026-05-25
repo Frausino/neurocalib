@@ -17,8 +17,8 @@ name: Weekly Audit
 
 on:
   schedule:
-    - cron: "0 6 * * 1"   # Every Monday at 06:00 UTC
-  workflow_dispatch:        # Manual trigger from GitHub UI or gh CLI
+    - cron: "0 6 * * 1" # Every Monday at 06:00 UTC
+  workflow_dispatch: # Manual trigger from GitHub UI or gh CLI
 
 jobs:
   audit:
@@ -35,7 +35,7 @@ jobs:
           version: "latest"
 
       - name: Install dependencies
-        run: uv sync --frozen
+        run: uv sync --frozen --extra dev
 
       - name: Assert schema integrity (4 tables, 5 views)
         # Uses :memory: for speed. Note: WAL journal mode is only available for
