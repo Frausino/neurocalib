@@ -1,3 +1,4 @@
+# pyproject.toml
 [project]
 name = "bci-calib"
 version = "0.1.0"
@@ -31,12 +32,16 @@ dev = [
     "pytest-cov>=5.0",
     "hypothesis>=6.110",
     "ruff>=0.6",
-    "mypy>=1.11",
+    "mypy>=2.0",
     "bandit[toml]>=1.7",
     "pip-audit>=2.7",
     "pre-commit>=3.8",
     "cyclonedx-bom>=4.4",
 ]
+
+[project.urls]
+Repository = "https://github.com/Frausino/bci-calib"
+Issues     = "https://github.com/Frausino/bci-calib/issues"
 
 [build-system]
 requires = ["hatchling"]
@@ -45,6 +50,7 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/bci_calib"]
 
+# ── Ruff ────────────────────────────────────────────────────────────
 [tool.ruff]
 line-length = 88
 target-version = "py311"
@@ -54,12 +60,18 @@ src = ["src"]
 select = ["E", "F", "I", "N", "B", "S"]
 ignore = ["S101"]
 
+[tool.ruff.lint.per-file-ignores]
+# S101 assert, S106 hardcoded passwords — normais em contexto de teste
+"tests/**" = ["S101", "S106"]
+
+# ── Mypy ────────────────────────────────────────────────────────────
 [tool.mypy]
 python_version = "3.11"
 strict = true
 warn_return_any = true
 warn_unused_configs = true
 
+# Terceiros sem stubs completos
 [[tool.mypy.overrides]]
 module = [
     "mne.*",
@@ -73,18 +85,51 @@ module = [
 ]
 ignore_missing_imports = true
 
+# @pytest.fixture e @given/@settings do Hypothesis não expõem generics
+# completos nos stubs. O override aplica-se quando tests/ tem __init__.py
+# em toda a hierarquia — obrigatório para mypy resolver os módulos como
+# tests.* (tests/__init__.py, tests/unit/__init__.py, etc.).
 [[tool.mypy.overrides]]
-module = "tests.*"
+module = [
+    "tests",
+    "tests.*",
+    "tests.unit",
+    "tests.unit.*",
+    "tests.unit.domain",
+    "tests.unit.domain.*",
+    "tests.tracking",
+    "tests.tracking.*",
+    "tests.integration",
+    "tests.integration.*",
+]
 disallow_untyped_decorators = false
 
+# ── Bandit ──────────────────────────────────────────────────────────
 [tool.bandit]
 targets = ["src"]
 skips = ["B101"]
 
+# ── Pytest ──────────────────────────────────────────────────────────
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src", "."]
+pythonpath = ["src"]
 addopts = "--cov=src --cov-report=xml -q"
 
+# ── Coverage ─────────────────────────────────────────────────────────
+[tool.coverage.run]
+source = ["src"]
+omit   = ["*/tests/*", "*/conftest.py"]
+
+[tool.coverage.report]
+fail_under = 80
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "\\.\\.\\.\\s*$",       # protocol stubs (body = ...)
+]
+
+# ── uv sources para CUDA ─────────────────────────────────────────────
+# Descomentar em S10 quando adicionar torch com CUDA 12.8
 # [[tool.uv.sources]]
 # torch = { index = "https://download.pytorch.org/whl/cu128" }

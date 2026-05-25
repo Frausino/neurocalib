@@ -33,14 +33,14 @@ from bci_calib.infrastructure.tracking.audit_db import AuditDB
 # ---------------------------------------------------------------------------
 
 
-@pytest.fixture  # type: ignore[misc]
+@pytest.fixture
 def db() -> AuditDB:
     _db = AuditDB(":memory:")
     _db.initialise()
     return _db
 
 
-@pytest.fixture  # type: ignore[misc]
+@pytest.fixture
 def file_db(tmp_path: Path) -> AuditDB:
     _db = AuditDB(tmp_path / "audit_test.db")
     _db.initialise()
