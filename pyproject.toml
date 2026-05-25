@@ -1,4 +1,3 @@
-# pyproject.toml
 [project]
 name = "bci-calib"
 version = "0.1.0"
@@ -46,7 +45,6 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/bci_calib"]
 
-# ── Ruff ────────────────────────────────────────────────────────────
 [tool.ruff]
 line-length = 88
 target-version = "py311"
@@ -54,16 +52,14 @@ src = ["src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "B", "S"]
-ignore = ["S101"]   # assert permitido em tests
+ignore = ["S101"]
 
-# ── Mypy ────────────────────────────────────────────────────────────
 [tool.mypy]
 python_version = "3.11"
 strict = true
 warn_return_any = true
 warn_unused_configs = true
 
-# OBRIGATÓRIO — sem isso mypy quebra no CI para todas essas libs
 [[tool.mypy.overrides]]
 module = [
     "mne.*",
@@ -81,18 +77,14 @@ ignore_missing_imports = true
 module = "tests.*"
 disallow_untyped_decorators = false
 
-# ── Bandit ──────────────────────────────────────────────────────────
 [tool.bandit]
 targets = ["src"]
-skips = ["B101"]    # assert em tests
+skips = ["B101"]
 
-# ── Pytest ──────────────────────────────────────────────────────────
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src","."]   # FIX: permite 'import bci_calib' no CI (src layout)
+pythonpath = ["src", "."]
 addopts = "--cov=src --cov-report=xml -q"
 
-# ── uv sources para CUDA ─────────────────────────────────────────────
-# Descomentar em S10 quando adicionar torch com CUDA 12.8
 # [[tool.uv.sources]]
 # torch = { index = "https://download.pytorch.org/whl/cu128" }
