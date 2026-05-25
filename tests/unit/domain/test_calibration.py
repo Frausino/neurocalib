@@ -127,8 +127,8 @@ class TestStableSigmoid:
             total = _stable_sigmoid(x) + _stable_sigmoid(-x)
             assert total == pytest.approx(1.0, abs=1e-14)
 
-    @settings(max_examples=500)  # type: ignore[misc]
-    @given(_finite_floats)  # type: ignore[misc]
+    @settings(max_examples=500)
+    @given(_finite_floats)
     def test_output_finite_and_in_unit_interval_hypothesis(self, x: float) -> None:
         """For any finite x, σ(x) ∈ [0, 1] and is finite. 500 exemplos."""
         result = _stable_sigmoid(x)
@@ -136,8 +136,8 @@ class TestStableSigmoid:
         assert not math.isinf(result)
         assert 0.0 <= result <= 1.0
 
-    @settings(max_examples=500)  # type: ignore[misc]
-    @given(  # type: ignore[misc]
+    @settings(max_examples=500)
+    @given(
         st.floats(
             min_value=-500.0, max_value=500.0, allow_nan=False, allow_infinity=False
         )
@@ -191,11 +191,7 @@ class TestComputeTau:
     def test_strictly_increasing_when_tau_min_less_than_tau_max_and_a_positive(
         self,
     ) -> None:
-        """τ is STRICTLY INCREASING in r_t when a > 0 and tau_min < tau_max.
-
-        τ = tau_min + positive_range · σ(a·r_t + b)
-        Since a > 0 and σ is increasing, τ is increasing.
-        """
+        """τ is STRICTLY INCREASING in r_t when a > 0 and tau_min < tau_max."""
         params = CalibrationParams(tau_min=1.0, tau_max=5.0, a=1.0)
         r_values = [-2.0, -1.0, 0.0, 1.0, 2.0]
         taus = [compute_tau(r, params) for r in r_values]
@@ -210,16 +206,12 @@ class TestComputeTau:
             compute_tau(-2.0, params_biased), rel=1e-10
         )
 
-    @settings(max_examples=500)  # type: ignore[misc]
-    @given(_safe_params_strategy(), _bounded_rt)  # type: ignore[misc]
+    @settings(max_examples=500)
+    @given(_safe_params_strategy(), _bounded_rt)
     def test_output_within_bounds_hypothesis(
         self, params: CalibrationParams, r_t: float
     ) -> None:
-        """τ stays within [tau_min, tau_max] bounds. 500 exemplos.
-
-        Uses <= (not <) because saturation can push τ exactly to the
-        boundary at extremes of the float range.
-        """
+        """τ stays within [tau_min, tau_max] bounds. 500 exemplos."""
         result = compute_tau(r_t, params)
         lower = min(params.tau_min, params.tau_max)
         upper = max(params.tau_min, params.tau_max)
@@ -227,6 +219,47 @@ class TestComputeTau:
             assert lower <= result <= upper
         else:
             assert result == pytest.approx(params.tau_min)
+
+    @settings(max_examples=500)
+    @given(
+        tau_min=_moderate_floats,
+        tau_max=_moderate_floats,
+    )
+    def test_arithmetic_mean_at_zero_rt_zero_b_hypothesis(
+        self, tau_min: float, tau_max: float
+    ) -> None:
+        """τ(0, b=0) == tau_min + (tau_max − tau_min) · 0.5 para qualquer par.
+
+        Proof: σ(0) = 0.5 exactamente em IEEE 754. 500 exemplos.
+        """
+        params = CalibrationParams(tau_min=tau_min, tau_max=tau_max, b=0.0)
+        result = compute_tau(0.0, params)
+        expected = tau_min + (tau_max - tau_min) * 0.5
+        assert result == pytest.approx(expected, rel=1e-10, abs=1e-10)
+
+    @settings(max_examples=500)
+    @given(
+        params=_safe_params_strategy(),
+        r_t=_bounded_rt,
+    )
+    def test_monotone_direction_matches_sign_of_range_times_a_hypothesis(
+        self, params: CalibrationParams, r_t: float
+    ) -> None:
+        """Monotonia: sinal da variação = sign(tau_max − tau_min). 500 exemplos.
+
+        _safe_params_strategy constrains a ∈ [0.1, 2.0] (always positive).
+        range > 0 → τ increasing. range < 0 → τ decreasing. range == 0 → constant.
+        Uses <= (not <) to tolerate floating-point saturation at boundaries.
+        """
+        eps = 1e-4
+        tau_range = params.tau_max - params.tau_min
+        tau_at_r = compute_tau(r_t, params)
+        tau_at_r_plus_eps = compute_tau(r_t + eps, params)
+
+        if tau_range > 0.0:
+            assert tau_at_r <= tau_at_r_plus_eps
+        elif tau_range < 0.0:
+            assert tau_at_r >= tau_at_r_plus_eps
 
 
 # ---------------------------------------------------------------------------
@@ -264,8 +297,8 @@ class TestCalibrationParams:
         assert params.a == 3.0
         assert params.b == -1.0
 
-    @settings(max_examples=500)  # type: ignore[misc]
-    @given(  # type: ignore[misc]
+    @settings(max_examples=500)
+    @given(
         tau_min=_moderate_floats,
         tau_max=_moderate_floats,
         a=_nonzero_moderate,

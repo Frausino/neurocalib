@@ -31,7 +31,7 @@ from bci_calib.domain.value_objects import AblationCondition
 # ---------------------------------------------------------------------------
 
 
-@pytest.fixture  # type: ignore[misc]
+@pytest.fixture
 def sample_session() -> SessionMetadata:
     return SessionMetadata(
         session_id="sess-001",
@@ -45,7 +45,7 @@ def sample_session() -> SessionMetadata:
     )
 
 
-@pytest.fixture  # type: ignore[misc]
+@pytest.fixture
 def sample_epoch() -> Epoch:
     return Epoch(
         participant_id="S1",
@@ -58,7 +58,7 @@ def sample_epoch() -> Epoch:
     )
 
 
-@pytest.fixture  # type: ignore[misc]
+@pytest.fixture
 def sample_params() -> CalibrationParams:
     return CalibrationParams(tau_min=1.0, tau_max=3.0, a=1.0, b=0.0)
 
@@ -91,7 +91,7 @@ class _FullMIClassifier:
 
 class _FullCalibrator:
     def compute_temperature(self, r_t: float, params: CalibrationParams) -> float:
-        return params.tau_min
+        return float(params.tau_min)
 
     def fit_params(
         self,
