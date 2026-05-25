@@ -32,32 +32,32 @@ from pydantic.dataclasses import dataclass
 class CalibrationParams:
     """Frozen parameter set for the temperature scaling function τ(r_t).
 
-    Implemented as a Pydantic dataclass so that:
-    - Positional construction works: ``CalibrationParams(3.0, 1.0)``.
-    - All fields are type-validated by Pydantic at construction time.
-    - ``frozen=True`` makes every field immutable after construction;
-      any mutation attempt raises ``pydantic_core.ValidationError``.
+        Implemented as a Pydantic dataclass so that:
+        - Positional construction works: ``CalibrationParams(3.0, 1.0)``.
+        - All fields are type-validated by Pydantic at construction time.
+        - ``frozen=True`` makes every field immutable after construction;
+          any mutation attempt raises ``pydantic_core.ValidationError``.
 
-    Fields
-    ------
+        Fields
+        ------
     tau_min :
         Lower bound of the temperature range.
-        When a > 0, τ(r_t) → tau_min as r_t → +∞.
+        When a > 0, τ(r_t) → tau_min as r_t → −∞.
     tau_max :
         Upper bound of the temperature range.
-        When a > 0, τ(r_t) → tau_max as r_t → −∞.
-    a :
-        Slope controlling sensitivity to autonomic arousal. Default 1.0.
-    b :
-        Bias shifting the sigmoid inflection point. Default 0.0.
-        When b = 0, τ(0) equals the arithmetic mean of tau_min and tau_max
-        exactly in IEEE 754, because σ(0) = 0.5 exactly.
+        When a > 0, τ(r_t) → tau_max as r_t → +∞.
+        a :
+            Slope controlling sensitivity to autonomic arousal. Default 1.0.
+        b :
+            Bias shifting the sigmoid inflection point. Default 0.0.
+            When b = 0, τ(0) equals the arithmetic mean of tau_min and tau_max
+            exactly in IEEE 754, because σ(0) = 0.5 exactly.
 
-    Examples
-    --------
-    >>> p = CalibrationParams(3.0, 1.0)
-    >>> p.tau_min, p.tau_max, p.a, p.b
-    (3.0, 1.0, 1.0, 0.0)
+        Examples
+        --------
+        >>> p = CalibrationParams(3.0, 1.0)
+        >>> p.tau_min, p.tau_max, p.a, p.b
+        (3.0, 1.0, 1.0, 0.0)
     """
 
     tau_min: float
