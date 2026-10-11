@@ -40,8 +40,8 @@ dev = [
 ]
 
 [project.urls]
-Repository = "https://github.com/Frausino/bci-calib"
-Issues     = "https://github.com/Frausino/bci-calib/issues"
+Repository = "https://github.com/Frausino/neurocalib"
+Issues     = "https://github.com/Frausino/neurocalib/issues"
 
 [build-system]
 requires = ["hatchling"]

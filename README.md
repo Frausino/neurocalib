@@ -2,7 +2,7 @@
 
 🇧🇷 Português: [README.pt-BR.md](README.pt-BR.md)
 
-[![CI](https://github.com/Frausino/bci-calib/actions/workflows/ci.yml/badge.svg)](https://github.com/Frausino/bci-calib/actions)
+[![CI](https://github.com/Frausino/neurocalib/actions/workflows/ci.yml/badge.svg)](https://github.com/Frausino/neurocalib/actions)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![SBOM: CycloneDX](https://img.shields.io/badge/SBOM-CycloneDX-informational)](https://cyclonedx.org)
@@ -138,7 +138,7 @@ pip install uv
 ## Clone repository
 
 ```bash
-git clone https://github.com/Frausino/bci-calib.git
+git clone https://github.com/Frausino/neurocalib.git
 cd bci-calib
 ```
 
