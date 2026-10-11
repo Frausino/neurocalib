@@ -51,16 +51,16 @@ class TestGenerateCorrelationId:
         cid = generate_correlation_id()
         suffix = cid[len("exp_") :]
         parts = suffix.split("_")
-        assert (
-            len(parts) == 3
-        ), f"Expected 3 segments after 'exp_', got {len(parts)}: {parts}"
+        assert len(parts) == 3, (
+            f"Expected 3 segments after 'exp_', got {len(parts)}: {parts}"
+        )
 
     def test_uniqueness_over_ten_consecutive_calls(self) -> None:
         """P(collision) < 1/65536 per pair; 10 calls should always be unique."""
         ids = [generate_correlation_id() for _ in range(10)]
-        assert len(set(ids)) == len(
-            ids
-        ), f"Collision detected among {len(ids)} consecutive IDs"
+        assert len(set(ids)) == len(ids), (
+            f"Collision detected among {len(ids)} consecutive IDs"
+        )
 
     def test_uid4_segment_is_four_hex_chars(self) -> None:
         uid4 = generate_correlation_id().split("_")[-1]
@@ -88,9 +88,9 @@ class TestGitShortHash:
         if h == "nogit":
             return
         assert len(h) == 7, f"Expected 7-char hash, got {len(h)}: {h!r}"
-        assert all(
-            c in "0123456789abcdef" for c in h
-        ), f"Hash {h!r} contains non-hex characters"
+        assert all(c in "0123456789abcdef" for c in h), (
+            f"Hash {h!r} contains non-hex characters"
+        )
 
     def test_nogit_fallback_is_string(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Simulate subprocess failure to verify 'nogit' fallback."""

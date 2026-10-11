@@ -135,8 +135,9 @@ class SessionMetadata(BaseModel):
         ``True`` when ``Var(r_t) >= 0.05`` across the session, indicating
         that the autonomic arousal index has sufficient variability for
         the temperature scaling function τ(r_t) to be meaningfully fitted.
-        ``False`` sessions are excluded from hypothesis H1 evaluation but
-        retained in the dataset for reproducibility.
+        ``False`` sessions are not excluded: per the pre-registration they
+        are analysed as a separate subgroup in the ablation, where τ(r_t)
+        is effectively constant and condition C is expected to match B.
     n_epochs :
         Total number of valid EEG epochs in the session. Must be positive.
     n_channels :

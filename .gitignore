@@ -48,7 +48,9 @@ data/external/
 # Audit / Local Databases
 # =========================================================
 
-logs/audit.db
+/audit.db
+audit.db-wal
+audit.db-shm
 logs/*.db
 
 # =========================================================
@@ -77,4 +79,3 @@ dev.ps1
 
 Thumbs.db
 .DS_Store
-```

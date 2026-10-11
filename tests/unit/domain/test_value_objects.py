@@ -48,3 +48,36 @@ class TestAblationCondition:
         """Members must iterate in definition order A→G."""
         values = [m.value for m in AblationCondition]
         assert values == ["A", "B", "C", "D", "E", "F", "G"]
+
+
+class TestAblationConditionSemantics:
+    """Meanings follow the pre-registered ablation (PIC, OSF) plus F and G."""
+
+    def test_every_member_has_a_description(self) -> None:
+        for member in AblationCondition:
+            assert member.description
+
+    def test_descriptions_are_unique(self) -> None:
+        descriptions = [member.description for member in AblationCondition]
+        assert len(set(descriptions)) == len(descriptions)
+
+    def test_a_is_uncalibrated_baseline(self) -> None:
+        assert "no calibration" in AblationCondition.A.description
+
+    def test_b_is_static_temperature_scaling(self) -> None:
+        assert "Static" in AblationCondition.B.description
+
+    def test_c_is_the_proposed_dynamic_model(self) -> None:
+        assert "proposed model" in AblationCondition.C.description
+
+    def test_d_is_internal_epistemic_uncertainty(self) -> None:
+        assert "epistemic" in AblationCondition.D.description
+
+    def test_e_uses_rmssd_as_feature_without_tau(self) -> None:
+        assert "feature" in AblationCondition.E.description
+
+    def test_f_is_platt_scaling(self) -> None:
+        assert AblationCondition.F.description == "Platt scaling"
+
+    def test_g_is_isotonic_regression(self) -> None:
+        assert AblationCondition.G.description == "Isotonic regression"
