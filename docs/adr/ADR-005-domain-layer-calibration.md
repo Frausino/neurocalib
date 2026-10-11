@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted. Parcialmente substituído pelo ADR-006 (parametrização de τ(r_t) e semântica das condições A–E).
 
 ## Data
 

@@ -1,31 +1,26 @@
 # tests/unit/domain/test_calibration.py
 """Unit tests for bci_calib.domain.calibration.
 
+Pre-registered model: τ(r_t) = 1 + (τ_max − 1) · σ(a · r_t).
+
 Structure
 ---------
-TestStableSigmoid     : deterministic + Hypothesis (500 exemplos)
-TestComputeTau        : GO/NO-GO, assintótica, monotonia, valor em 0
-TestCalibrationParams : frozen, defaults, Hypothesis (500 exemplos)
+TestStableSigmoid     : deterministic + Hypothesis (500 examples)
+TestComputeTau        : GO/NO-GO, bounds, asymptotes, monotonicity
+TestCalibrationParams : frozen, positional order, validation
+TestFrozenDecisions   : τ_min = 1 and b = 0 are module constants
 
 Floating-point saturation
---------------------------
-For |a·r_t + b| >> 1, _stable_sigmoid saturates to 0.0 or 1.0 exactly.
-Tests that assert strict bounds use a moderate range where saturation
-does not occur. Tests that check asymptotic behavior use large |r_t|
-and assert approximate equality to the boundary value.
-
-Monotonia (a > 0, tau_min < tau_max)
---------------------------------------
-τ(r_t) = tau_min + (tau_max − tau_min) · σ(a · r_t + b)
-       = tau_min + positive_range · increasing_sigmoid
-→ τ is STRICTLY INCREASING in r_t when a > 0 and tau_min < tau_max.
-
-Coverage target: 100% de domain/calibration.py.
+-------------------------
+For |a · r_t| >> 1 the sigmoid saturates to 0.0 or 1.0 exactly, so strict
+inequalities are only asserted on a moderate range of a · r_t.
 """
 
 from __future__ import annotations
 
+import ast
 import math
+import pathlib
 
 import pytest
 from hypothesis import given, settings
@@ -33,281 +28,184 @@ from hypothesis import strategies as st
 from pydantic import ValidationError
 
 from bci_calib.domain.calibration import (
+    SIGMOID_BIAS,
+    TAU_MIN,
     CalibrationParams,
     _stable_sigmoid,
     compute_tau,
 )
 
-# ---------------------------------------------------------------------------
-# Strategies
-# ---------------------------------------------------------------------------
-
 _finite_floats = st.floats(allow_nan=False, allow_infinity=False)
-_moderate_floats = st.floats(
-    min_value=-1e6, max_value=1e6, allow_nan=False, allow_infinity=False
+_valid_tau_max = st.floats(
+    min_value=TAU_MIN, max_value=1e6, allow_nan=False, allow_infinity=False
 )
-_nonzero_moderate = _moderate_floats.filter(lambda x: x != 0.0)
-
-# Bounded r_t AND b to prevent sigmoid saturation in bound tests:
-# ensures |a·r_t + b| < 10 for the strict (lower, upper) assertion.
+_tau_max_above_floor = st.floats(
+    min_value=1.01, max_value=10.0, allow_nan=False, allow_infinity=False
+)
+_moderate_slope = st.floats(
+    min_value=-2.0, max_value=2.0, allow_nan=False, allow_infinity=False
+)
 _bounded_rt = st.floats(
     min_value=-5.0, max_value=5.0, allow_nan=False, allow_infinity=False
 )
-_small_b = st.floats(
-    min_value=-5.0, max_value=5.0, allow_nan=False, allow_infinity=False
-)
-_safe_a = st.floats(min_value=0.1, max_value=2.0, allow_nan=False, allow_infinity=False)
 
 
-def _safe_params_strategy() -> st.SearchStrategy[CalibrationParams]:
-    """Params where |a·r_t + b| stays away from saturation for |r_t| <= 5."""
-    return st.builds(
-        CalibrationParams,
-        tau_min=_moderate_floats,
-        tau_max=_moderate_floats,
-        a=_safe_a,
-        b=_small_b,
-    )
-
-
-def _any_params_strategy() -> st.SearchStrategy[CalibrationParams]:
-    return st.builds(
-        CalibrationParams,
-        tau_min=_moderate_floats,
-        tau_max=_moderate_floats,
-        a=_nonzero_moderate,
-        b=_moderate_floats,
-    )
-
-
-# ---------------------------------------------------------------------------
-# TestStableSigmoid
-# ---------------------------------------------------------------------------
+def _valid_params_strategy() -> st.SearchStrategy[CalibrationParams]:
+    return st.builds(CalibrationParams, tau_max=_valid_tau_max, a=_finite_floats)
 
 
 class TestStableSigmoid:
     def test_at_zero_is_exactly_half(self) -> None:
-        """σ(0) must be 0.5 exactly in IEEE 754.
-
-        math.exp(0) == 1.0 exactly; 1/(1+1) == 0.5 exactly because
-        0.5 is representable as the binary fraction 2^{-1}.
-        """
         assert _stable_sigmoid(0.0) == 0.5
 
-    def test_positive_branch_executes(self) -> None:
-        """x > 0 takes the branch 1/(1+exp(-x))."""
-        result = _stable_sigmoid(1.0)
-        assert result == 1.0 / (1.0 + math.exp(-1.0))
+    def test_positive_branch_matches_closed_form(self) -> None:
+        assert _stable_sigmoid(1.0) == 1.0 / (1.0 + math.exp(-1.0))
 
-    def test_negative_branch_executes(self) -> None:
-        """x < 0 takes the branch exp(x)/(1+exp(x))."""
+    def test_negative_branch_matches_closed_form(self) -> None:
         exp_neg = math.exp(-1.0)
         assert _stable_sigmoid(-1.0) == exp_neg / (1.0 + exp_neg)
 
     def test_large_positive_saturates_to_one_without_overflow(self) -> None:
-        """σ(710) returns 1.0 by IEEE 754 saturation — no OverflowError."""
-        result = _stable_sigmoid(710.0)
-        assert result == 1.0
-        assert not math.isnan(result)
+        assert _stable_sigmoid(710.0) == 1.0
 
     def test_large_negative_saturates_near_zero_without_overflow(self) -> None:
-        """σ(-710) returns a subnormal near zero — no OverflowError."""
-        result = _stable_sigmoid(-710.0)
-        assert result < 1e-200
-        assert not math.isnan(result)
+        assert _stable_sigmoid(-800.0) < 1e-200
 
-    def test_moderate_range_strictly_between_zero_and_one(self) -> None:
-        """For |x| <= 10, σ(x) ∈ (0, 1) strictly — no saturation."""
-        for x in [-10.0, -1.0, 0.0, 1.0, 10.0]:
-            assert 0.0 < _stable_sigmoid(x) < 1.0
-
-    def test_symmetry(self) -> None:
-        """σ(x) + σ(−x) = 1.0 (logistic symmetry)."""
+    def test_logistic_symmetry(self) -> None:
         for x in [0.5, 1.0, 3.0, 10.0]:
             total = _stable_sigmoid(x) + _stable_sigmoid(-x)
             assert total == pytest.approx(1.0, abs=1e-14)
 
     @settings(max_examples=500)
     @given(_finite_floats)
-    def test_output_finite_and_in_unit_interval_hypothesis(self, x: float) -> None:
-        """For any finite x, σ(x) ∈ [0, 1] and is finite. 500 exemplos."""
+    def test_output_is_finite_and_in_unit_interval(self, x: float) -> None:
         result = _stable_sigmoid(x)
-        assert not math.isnan(result)
-        assert not math.isinf(result)
+        assert math.isfinite(result)
         assert 0.0 <= result <= 1.0
 
     @settings(max_examples=500)
-    @given(
-        st.floats(
-            min_value=-500.0, max_value=500.0, allow_nan=False, allow_infinity=False
-        )
-    )
-    def test_monotone_hypothesis(self, x: float) -> None:
-        """σ is non-decreasing: σ(x) <= σ(x+ε). 500 exemplos.
-
-        Uses <= (not <) because for |x| >> 1 both σ(x) and σ(x+ε)
-        saturate to the same float value (0.0 or 1.0).
-        """
+    @given(st.floats(min_value=-500.0, max_value=500.0))
+    def test_is_non_decreasing(self, x: float) -> None:
         assert _stable_sigmoid(x) <= _stable_sigmoid(x + 1e-6)
-
-
-# ---------------------------------------------------------------------------
-# TestComputeTau
-# ---------------------------------------------------------------------------
 
 
 class TestComputeTau:
     def test_go_no_go_exact(self) -> None:
-        """GO/NO-GO: compute_tau(0.0, CalibrationParams(3.0, 1.0)) == 2.0 exatamente.
-
-        Exact IEEE 754 equality (==), not approximate.
-        Chain: σ(0)=0.5 → (1.0−3.0)×0.5=−1.0 → 3.0+(−1.0)=2.0.
-        All intermediate values are exact binary fractions.
-        """
+        """GO/NO-GO: 1 + (3 − 1) × σ(0) == 2.0 exactly in IEEE 754."""
         assert compute_tau(0.0, CalibrationParams(3.0, 1.0)) == 2.0
 
-    def test_at_zero_rt_with_zero_b_is_arithmetic_mean(self) -> None:
-        """When b=0 and r_t=0: τ = tau_min + (tau_max−tau_min)·0.5."""
-        params = CalibrationParams(tau_min=1.0, tau_max=5.0)
-        assert compute_tau(0.0, params) == pytest.approx(3.0)
+    def test_at_zero_rt_is_midpoint_between_one_and_tau_max(self) -> None:
+        assert compute_tau(0.0, CalibrationParams(tau_max=5.0)) == 3.0
 
-    def test_large_positive_rt_approaches_tau_max_when_a_positive(self) -> None:
-        """When a > 0 and r_t → +∞: σ → 1, τ → tau_min + (tau_max−tau_min) = tau_max."""
-        params = CalibrationParams(tau_min=1.0, tau_max=5.0)
-        assert compute_tau(1000.0, params) == pytest.approx(params.tau_max, abs=1e-6)
+    def test_tau_max_equal_to_floor_gives_uncalibrated_softmax(self) -> None:
+        params = CalibrationParams(tau_max=TAU_MIN, a=-4.0)
+        for r_t in [-3.0, 0.0, 3.0]:
+            assert compute_tau(r_t, params) == TAU_MIN
 
-    def test_large_negative_rt_approaches_tau_min_when_a_positive(self) -> None:
-        """When a > 0 and r_t → −∞: σ → 0, τ → tau_min."""
-        params = CalibrationParams(tau_min=1.0, tau_max=5.0)
-        assert compute_tau(-1000.0, params) == pytest.approx(params.tau_min, abs=1e-6)
+    def test_zero_slope_collapses_to_static_temperature(self) -> None:
+        """a = 0 reduces τ(r_t) to a constant, i.e. ablation condition B."""
+        params = CalibrationParams(tau_max=4.0, a=0.0)
+        taus = {compute_tau(r_t, params) for r_t in [-3.0, 0.0, 3.0]}
+        assert taus == {2.5}
 
-    def test_moderate_rt_strictly_between_bounds(self) -> None:
-        """For |r_t| <= 5 and default a=1, b=0: τ strictly inside (tau_min, tau_max)."""
-        params = CalibrationParams(tau_min=1.0, tau_max=5.0)
-        for r_t in [-5.0, -1.0, 0.0, 1.0, 5.0]:
-            result = compute_tau(r_t, params)
-            assert 1.0 < result < 5.0
+    def test_negative_slope_raises_tau_when_rmssd_falls(self) -> None:
+        """Pre-registered direction: a < 0 → low r_t (low RMSSD) → higher τ."""
+        params = CalibrationParams(tau_max=3.0, a=-1.0)
+        assert compute_tau(-2.0, params) > compute_tau(2.0, params)
 
-    def test_strictly_increasing_when_tau_min_less_than_tau_max_and_a_positive(
-        self,
-    ) -> None:
-        """τ is STRICTLY INCREASING in r_t when a > 0 and tau_min < tau_max."""
-        params = CalibrationParams(tau_min=1.0, tau_max=5.0, a=1.0)
-        r_values = [-2.0, -1.0, 0.0, 1.0, 2.0]
-        taus = [compute_tau(r, params) for r in r_values]
-        for i in range(len(taus) - 1):
-            assert taus[i] < taus[i + 1]
+    def test_negative_slope_asymptotes(self) -> None:
+        params = CalibrationParams(tau_max=3.0, a=-1.0)
+        assert compute_tau(-1000.0, params) == pytest.approx(3.0, abs=1e-9)
+        assert compute_tau(1000.0, params) == pytest.approx(TAU_MIN, abs=1e-9)
 
-    def test_bias_shifts_inflection_point(self) -> None:
-        """compute_tau(0, params_b0) == compute_tau(-b/a, params_b) at inflection."""
-        params_no_bias = CalibrationParams(tau_min=1.0, tau_max=5.0, b=0.0)
-        params_biased = CalibrationParams(tau_min=1.0, tau_max=5.0, b=2.0)
-        assert compute_tau(0.0, params_no_bias) == pytest.approx(
-            compute_tau(-2.0, params_biased), rel=1e-10
-        )
+    def test_positive_slope_asymptotes(self) -> None:
+        params = CalibrationParams(tau_max=3.0, a=1.0)
+        assert compute_tau(1000.0, params) == pytest.approx(3.0, abs=1e-9)
+        assert compute_tau(-1000.0, params) == pytest.approx(TAU_MIN, abs=1e-9)
 
     @settings(max_examples=500)
-    @given(_safe_params_strategy(), _bounded_rt)
-    def test_output_within_bounds_hypothesis(
+    @given(_valid_params_strategy(), _finite_floats)
+    def test_never_leaves_closed_interval_one_to_tau_max(
         self, params: CalibrationParams, r_t: float
     ) -> None:
-        """τ stays within [tau_min, tau_max] bounds. 500 exemplos."""
-        result = compute_tau(r_t, params)
-        lower = min(params.tau_min, params.tau_max)
-        upper = max(params.tau_min, params.tau_max)
-        if params.tau_min != params.tau_max:
-            assert lower <= result <= upper
+        tau = compute_tau(r_t, params)
+        one_ulp_tolerance = params.tau_max * 1e-15
+        assert TAU_MIN <= tau <= params.tau_max + one_ulp_tolerance
+
+    @settings(max_examples=500)
+    @given(_tau_max_above_floor, _moderate_slope, _bounded_rt)
+    def test_direction_of_change_follows_sign_of_slope(
+        self, tau_max: float, a: float, r_t: float
+    ) -> None:
+        params = CalibrationParams(tau_max=tau_max, a=a)
+        tau_here = compute_tau(r_t, params)
+        tau_ahead = compute_tau(r_t + 1e-3, params)
+        if a > 0.0:
+            assert tau_here <= tau_ahead
+        elif a < 0.0:
+            assert tau_here >= tau_ahead
         else:
-            assert result == pytest.approx(params.tau_min)
-
-    @settings(max_examples=500)
-    @given(
-        tau_min=_moderate_floats,
-        tau_max=_moderate_floats,
-    )
-    def test_arithmetic_mean_at_zero_rt_zero_b_hypothesis(
-        self, tau_min: float, tau_max: float
-    ) -> None:
-        """τ(0, b=0) == tau_min + (tau_max − tau_min) · 0.5 para qualquer par.
-
-        Proof: σ(0) = 0.5 exactamente em IEEE 754. 500 exemplos.
-        """
-        params = CalibrationParams(tau_min=tau_min, tau_max=tau_max, b=0.0)
-        result = compute_tau(0.0, params)
-        expected = tau_min + (tau_max - tau_min) * 0.5
-        assert result == pytest.approx(expected, rel=1e-10, abs=1e-10)
-
-    @settings(max_examples=500)
-    @given(
-        params=_safe_params_strategy(),
-        r_t=_bounded_rt,
-    )
-    def test_monotone_direction_matches_sign_of_range_times_a_hypothesis(
-        self, params: CalibrationParams, r_t: float
-    ) -> None:
-        """Monotonia: sinal da variação = sign(tau_max − tau_min). 500 exemplos.
-
-        _safe_params_strategy constrains a ∈ [0.1, 2.0] (always positive).
-        range > 0 → τ increasing. range < 0 → τ decreasing. range == 0 → constant.
-        Uses <= (not <) to tolerate floating-point saturation at boundaries.
-        """
-        eps = 1e-4
-        tau_range = params.tau_max - params.tau_min
-        tau_at_r = compute_tau(r_t, params)
-        tau_at_r_plus_eps = compute_tau(r_t + eps, params)
-
-        if tau_range > 0.0:
-            assert tau_at_r <= tau_at_r_plus_eps
-        elif tau_range < 0.0:
-            assert tau_at_r >= tau_at_r_plus_eps
-
-
-# ---------------------------------------------------------------------------
-# TestCalibrationParams
-# ---------------------------------------------------------------------------
+            assert tau_here == tau_ahead
 
 
 class TestCalibrationParams:
-    def test_positional_construction(self) -> None:
-        """CalibrationParams(3.0, 1.0) maps to tau_min=3.0, tau_max=1.0."""
+    def test_positional_order_is_tau_max_then_slope(self) -> None:
         params = CalibrationParams(3.0, 1.0)
-        assert params.tau_min == 3.0
-        assert params.tau_max == 1.0
+        assert params.tau_max == 3.0
+        assert params.a == 1.0
 
-    def test_default_a_is_one(self) -> None:
-        assert CalibrationParams(tau_min=1.0, tau_max=3.0).a == 1.0
+    def test_default_slope_is_one(self) -> None:
+        assert CalibrationParams(tau_max=2.0).a == 1.0
 
-    def test_default_b_is_zero(self) -> None:
-        assert CalibrationParams(tau_min=1.0, tau_max=3.0).b == 0.0
+    def test_tau_max_below_floor_is_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            CalibrationParams(tau_max=0.99)
 
-    def test_frozen_raises_on_tau_min_mutation(self) -> None:
-        params = CalibrationParams(tau_min=1.0, tau_max=3.0)
+    def test_tau_max_equal_to_floor_is_accepted(self) -> None:
+        assert CalibrationParams(tau_max=TAU_MIN).tau_max == TAU_MIN
+
+    @pytest.mark.parametrize("non_finite", [math.inf, -math.inf, math.nan])
+    def test_non_finite_tau_max_is_rejected(self, non_finite: float) -> None:
+        with pytest.raises(ValidationError):
+            CalibrationParams(tau_max=non_finite)
+
+    @pytest.mark.parametrize("non_finite", [math.inf, -math.inf, math.nan])
+    def test_non_finite_slope_is_rejected(self, non_finite: float) -> None:
+        with pytest.raises(ValidationError):
+            CalibrationParams(tau_max=2.0, a=non_finite)
+
+    def test_tau_max_is_immutable(self) -> None:
+        params = CalibrationParams(tau_max=3.0)
         with pytest.raises((ValidationError, TypeError, AttributeError)):
-            params.tau_min = 99.0
+            params.tau_max = 9.0
 
-    def test_frozen_raises_on_a_mutation(self) -> None:
-        params = CalibrationParams(tau_min=1.0, tau_max=3.0)
+    def test_slope_is_immutable(self) -> None:
+        params = CalibrationParams(tau_max=3.0)
         with pytest.raises((ValidationError, TypeError, AttributeError)):
             params.a = 0.0
 
-    def test_keyword_construction(self) -> None:
-        params = CalibrationParams(tau_min=0.5, tau_max=2.0, a=3.0, b=-1.0)
-        assert params.tau_min == 0.5
-        assert params.tau_max == 2.0
-        assert params.a == 3.0
-        assert params.b == -1.0
+    def test_has_exactly_two_free_parameters(self) -> None:
+        fields = CalibrationParams.__dataclass_fields__
+        assert set(fields) == {"tau_max", "a"}
 
-    @settings(max_examples=500)
-    @given(
-        tau_min=_moderate_floats,
-        tau_max=_moderate_floats,
-        a=_nonzero_moderate,
-        b=_moderate_floats,
-    )
-    def test_construction_always_succeeds_hypothesis(
-        self, tau_min: float, tau_max: float, a: float, b: float
-    ) -> None:
-        """Any finite float combination constructs CalibrationParams. 500 exemplos."""
-        params = CalibrationParams(tau_min=tau_min, tau_max=tau_max, a=a, b=b)
-        assert params.tau_min == tau_min
-        assert params.tau_max == tau_max
+
+class TestFrozenDecisions:
+    def test_tau_min_is_fixed_at_one(self) -> None:
+        assert TAU_MIN == 1.0
+
+    def test_sigmoid_bias_is_fixed_at_zero(self) -> None:
+        assert SIGMOID_BIAS == 0.0
+
+    def test_calibration_module_has_no_forbidden_imports(self) -> None:
+        source = pathlib.Path("src/bci_calib/domain/calibration.py").read_text(
+            encoding="utf-8"
+        )
+        forbidden_roots = {"mne", "numpy", "torch", "scipy", "sklearn"}
+        for node in ast.walk(ast.parse(source)):
+            if isinstance(node, ast.Import):
+                imported = {alias.name.split(".")[0] for alias in node.names}
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                imported = {node.module.split(".")[0]}
+            else:
+                continue
+            assert not imported & forbidden_roots

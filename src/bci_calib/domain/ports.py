@@ -199,7 +199,7 @@ class Calibrator(Protocol):
         Returns
         -------
         float
-            Temperature τ(r_t) = tau_min + (tau_max − tau_min) · σ(a·r_t+b).
+            Temperature τ(r_t) = 1 + (tau_max − 1) · σ(a · r_t).
         """
         ...
 
@@ -221,7 +221,7 @@ class Calibrator(Protocol):
         Returns
         -------
         CalibrationParams
-            Fitted frozen parameter set minimising the NLL objective
-            as in Guo et al. 2017 (arXiv:1706.04599).
+            Fitted frozen θ = (tau_max, a) that minimises the pre-registered
+            calibration objective on the inner cross-validation folds.
         """
         ...

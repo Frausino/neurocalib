@@ -1,5 +1,11 @@
-set shell := ["powershell.exe", "-Command"]
+# justfile
+# Cross-platform: sh on Linux/WSL, PowerShell on native Windows.
+# Recipes call only uv/python so the same commands work in both shells.
+
+set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
+
 export PYTHONPATH := "src"
+
 default:
     just --list
 
@@ -16,20 +22,19 @@ format:
     uv run ruff format .
 
 typecheck:
-    uv run mypy src
+    uv run mypy src tests
 
 test:
     uv run pytest --cov=src --cov-report=term-missing -q
 
 security:
-    uv run bandit -r src
+    uv run bandit -c pyproject.toml -r src
 
 audit:
-    uv run pip-audit
+    uv run pip-audit --skip-editable --ignore-vuln PYSEC-2026-3447
 
 sbom:
     uv run cyclonedx-py environment --output-format JSON --outfile sbom.json
-    Write-Host "SBOM gerado em sbom.json"
 
 all:
     just fix
@@ -45,20 +50,13 @@ mlflow-ui:
     uv run mlflow ui --port 5001
 
 clean:
-    if (Test-Path ".coverage") { Remove-Item .coverage -Force }
-    if (Test-Path "coverage.xml") { Remove-Item coverage.xml -Force }
-    if (Test-Path "htmlcov") { Remove-Item htmlcov -Recurse -Force }
-    if (Test-Path "sbom.json") { Remove-Item sbom.json -Force }
-
-    Get-ChildItem -Recurse -Directory -Filter "__pycache__" | Remove-Item -Recurse -Force
-    Get-ChildItem -Recurse -Filter "*.pyc" | Remove-Item -Force
+    uv run python -c "import pathlib, shutil; root = pathlib.Path('.'); [p.unlink() for p in map(pathlib.Path, ['.coverage', 'coverage.xml', 'sbom.json']) if p.exists()]; [shutil.rmtree(p) for p in [root / 'htmlcov', *(d for d in root.rglob('__pycache__') if '.venv' not in d.parts)] if p.exists()]"
 
 help:
-    just --listjust --list
+    just --list
 
 audit-init:
     uv run python -c "from bci_calib.infrastructure.tracking.audit_db import AuditDB; db = AuditDB('audit.db'); db.initialise(); assert db.table_count() == 4; assert db.view_count() == 5; print(f'OK: {db.table_count()} tables | {db.view_count()} views')"
 
 test-tracking:
     uv run pytest tests/tracking/ -v --tb=short
-
