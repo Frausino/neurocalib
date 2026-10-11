@@ -1,0 +1,5 @@
+# Normalise line endings: LF in the repository, regardless of OS (Windows or WSL).
+* text=auto eol=lf
+*.db binary
+*.png binary
+*.zip binary

@@ -28,7 +28,7 @@ def _valid_session(**overrides: object) -> SessionMetadata:
         session_id="sess-001",
         participant_id="S1",
         recording_date="2026-08-17",
-        ablation_condition=AblationCondition.D,
+        ablation_condition=AblationCondition.C,
         functionally_identifiable=True,
         n_epochs=288,
         n_channels=22,
@@ -195,7 +195,7 @@ class TestSessionMetadata:
     def test_valid_construction(self) -> None:
         session = _valid_session()
         assert session.session_id == "sess-001"
-        assert session.ablation_condition == AblationCondition.D
+        assert session.ablation_condition == AblationCondition.C
         assert session.functionally_identifiable is True
 
     def test_functionally_identifiable_field_exists(self) -> None:

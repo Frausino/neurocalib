@@ -37,7 +37,7 @@ def sample_session() -> SessionMetadata:
         session_id="sess-001",
         participant_id="S1",
         recording_date="2026-08-20",
-        ablation_condition=AblationCondition.D,
+        ablation_condition=AblationCondition.C,
         functionally_identifiable=True,
         n_epochs=288,
         n_channels=22,
@@ -60,7 +60,7 @@ def sample_epoch() -> Epoch:
 
 @pytest.fixture
 def sample_params() -> CalibrationParams:
-    return CalibrationParams(tau_min=1.0, tau_max=3.0, a=1.0, b=0.0)
+    return CalibrationParams(tau_max=3.0, a=-1.0)
 
 
 # ---------------------------------------------------------------------------
@@ -91,14 +91,14 @@ class _FullMIClassifier:
 
 class _FullCalibrator:
     def compute_temperature(self, r_t: float, params: CalibrationParams) -> float:
-        return float(params.tau_min)
+        return float(params.tau_max)
 
     def fit_params(
         self,
         arousal_indices: Sequence[float],
         labels: Sequence[int],
     ) -> CalibrationParams:
-        return CalibrationParams(tau_min=1.0, tau_max=3.0)
+        return CalibrationParams(tau_max=3.0)
 
 
 # ---------------------------------------------------------------------------
@@ -139,7 +139,7 @@ class _CalibratorMissingComputeTemperature:
     def fit_params(
         self, arousal_indices: Sequence[float], labels: Sequence[int]
     ) -> CalibrationParams:
-        return CalibrationParams(tau_min=1.0, tau_max=3.0)
+        return CalibrationParams(tau_max=3.0)
 
 
 # ---------------------------------------------------------------------------
@@ -268,6 +268,6 @@ class TestZeroExternalDependencies:
         for node in ast.walk(tree):
             if isinstance(node, ast.ImportFrom) and node.module:
                 for forbidden in ("mne", "numpy", "torch", "scipy", "sklearn"):
-                    assert (
-                        forbidden not in node.module
-                    ), f"Forbidden dependency in domain/ports.py: {node.module}"
+                    assert forbidden not in node.module, (
+                        f"Forbidden dependency in domain/ports.py: {node.module}"
+                    )
