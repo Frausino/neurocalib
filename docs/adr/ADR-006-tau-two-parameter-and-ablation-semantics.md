@@ -1,4 +1,4 @@
-# ADR-006 — τ(r_t) com dois parâmetros livres e semântica da ablação A–G
+# ADR-006: τ(r_t) com dois parâmetros livres e semântica da ablação A–G
 
 ## Status
 
@@ -52,6 +52,8 @@ De A a E, segue o PIC. F e G seguem o Guia Mestre. `AblationCondition.descriptio
 `functionally_identifiable = False` não exclui a sessão. Conforme o pré-registro, a sessão entra num subgrupo analisado separadamente.
 
 ## Pendências fora deste ADR
+
+Resolvidas no ADR-007 (2026-10-11).
 
 - **Sinal de `a`.** O PIC define `a ∈ [−10, 0]`, porque τ deve subir quando o RMSSD cai. O mission card S15 do Guia define `a ∈ [0.01, 10]`. Decidir antes da S15.
 - **Objetivo de ajuste.** O PIC usa argmin ECE_val. A Lista de Leitura (C01) usa NLL com L-BFGS-B. Decidir antes da S15.
