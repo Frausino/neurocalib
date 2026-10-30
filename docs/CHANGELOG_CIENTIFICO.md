@@ -1,36 +1,45 @@
-# Changelog Científico — bci-calib
+# Changelog Científico: bci-calib
 
 Registra mudanças metodológicas que afetam a interpretação dos resultados. Commits técnicos ficam no Git log. Formato: Guia Mestre v5, Seção 0.8.
 
 ---
 
-## 2026-10-11 — Atualização do uv.lock (versões da pilha científica)
+## 2026-10-11: Desenho inferencial (H1 única confirmatória)
 
-**Tipo:** [ ] Metodológico  [x] Técnico  [ ] Protocolo  [ ] Estatístico
-**Impacto:** [x] Pequeno  [ ] Médio  [ ] Grande
+**Tipo:** [ ] Metodológico  [ ] Técnico  [ ] Protocolo  [x] Estatístico
+**Impacto:** [ ] Pequeno  [ ] Médio  [x] Grande
 
 ### Mudança
-`uv lock --upgrade` para zerar as vulnerabilidades conhecidas (pip-audit: 147 em 17 pacotes, antes). Versões científicas resultantes: mne 1.13.2, moabb 1.7.2, pyriemann 0.12, braindecode 1.8.1, torch 2.14.1, scikit-learn 1.9.1, mlflow 3.17.0.
+- Substituição metodológica, antes do pré-registro, da regra de controle familiar α = 0,025 (H1 e H2) do Guia Mestre 0.6.
+- H1 é a única hipótese confirmatória: Wilcoxon pareado unilateral, α = 0,05. H2 e H2b são secundárias.
+- Contrastes secundários com as condições F e G formam uma família separada, com correção de Holm.
+- Amostra-alvo: n = 20 sujeitos analisáveis, poder aproximado de 0,81 para o teste de Wilcoxon de H1 sob d = 0,60 (t não central com a eficiência assintótica relativa do Wilcoxon, 3/π). Para n = 15, o mesmo componente tem poder aproximado de 0,69. O poder da regra composta de corroboração, com os critérios adicionais de relevância e segurança, não foi estimado.
+- Degeneração do componente dinâmico: |a| < 0,1.
+- Ajuste por NLL, com a ∈ [−10, 0] e τ_max ∈ [1, 5].
 
 ### Motivação
-O hook pip-audit antigo auditava o ambiente isolado do próprio hook, não o projeto. Com o hook corrigido, o lock antigo reprovava o CI.
+Com α = 0,025, n = 19 teria poder de 0,67. Uma única hipótese confirmatória direcional, definida antes dos dados, é coerente com H1 como pergunta central. Detalhes e alternativas em `docs/adr/ADR-007-inferential-design.md`.
 
 ### Impacto nos resultados
-Nenhum resultado foi gerado ainda. O PIC (Seção 6d) cita MNE-Python 1.12, pyriemann 0.9 e braindecode 1.3.2; o Método do manuscrito deve citar as versões do uv.lock usado na análise final.
-
-### Risco residual aceito
-PYSEC-2026-3447 (setuptools < 83): neurokit2 0.2.13 exige setuptools<82. Ignorado no pip-audit até o neurokit2 liberar.
+Ainda não há dados reais. A decisão antecede qualquer coleta e o OSF.
 
 ### Arquivos afetados
-- uv.lock
-- .pre-commit-config.yaml
+- docs/adr/ADR-007-inferential-design.md
+- docs/power_analysis.py
+- src/bci_calib/application/power_analysis.py
+- src/bci_calib/application/trial_rmssd_alignment.py
+- src/bci_calib/application/session_audit.py
+- src/bci_calib/infrastructure/tracking/session_log.py
+- DMP.md (minuta)
+- docs/TCLE.md
+- OSF_PREREG.md
 
-### OSF atualizado: N/A
-### Validado por: 140 testes (Python 3.11 e 3.12), mypy --strict, ruff, bandit, pip-audit
+### OSF atualizado: pendente (pré-registro ainda não submetido)
+### Validado por: pytest tests/unit/application, mypy --strict, ruff, bandit
 
 ---
 
-## 2026-10-11 — τ(r_t) com dois parâmetros livres e ablação alinhada ao PIC
+## 2026-10-11: τ(r_t) com dois parâmetros livres e ablação alinhada ao PIC
 
 **Tipo:** [x] Metodológico  [x] Técnico  [ ] Protocolo  [ ] Estatístico
 **Impacto:** [ ] Pequeno  [x] Médio  [ ] Grande
@@ -59,7 +68,7 @@ Ainda não há dados reais. Com isso, o modelo implementado volta a ser idêntic
 
 ---
 
-## 2026-05-25 — Entradas iniciais (S3)
+## 2026-05-25: Entradas iniciais (S3)
 
 | Decisão | Motivação |
 |---|---|
