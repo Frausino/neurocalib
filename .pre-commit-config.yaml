@@ -33,13 +33,21 @@ repos:
         pass_filenames: false
         types_or: [python]
 
-      # PYSEC-2026-3447 (setuptools < 83): accepted risk. neurokit2 0.2.13
-      # declares setuptools<82, so no resolvable fix exists. setuptools is a
-      # build-time tool, not imported by bci_calib at runtime. Re-check on
-      # every neurokit2 release and remove the ignore once the cap is lifted.
+      # setuptools 81.0.0 is an accepted risk: neurokit2 0.2.13 declares
+      # setuptools<82, so no resolvable fix exists. setuptools is a build-time
+      # tool, not imported by bci_calib at runtime.
+      #   PYSEC-2026-3447 (fix 83.0.0): MANIFEST.in exclusion bypass when
+      #     building an sdist on macOS. This project builds on Linux.
+      #   GHSA-xmj3-9gf7-h52w (fix 84.1.0): Windows only, crafted wheel in the
+      #     legacy install_as_egg path. This project installs with uv on Linux.
+      # Re-check on every neurokit2 release and remove both ignores once the
+      # cap is lifted.
       - id: pip-audit
         name: pip-audit (project environment)
-        entry: uv run --frozen pip-audit --skip-editable --ignore-vuln PYSEC-2026-3447
+        entry: >-
+          uv run --frozen pip-audit --skip-editable
+          --ignore-vuln PYSEC-2026-3447
+          --ignore-vuln GHSA-xmj3-9gf7-h52w
         language: system
         pass_filenames: false
         files: ^(pyproject\.toml|uv\.lock)$

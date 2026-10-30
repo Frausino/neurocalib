@@ -31,7 +31,7 @@ security:
     uv run bandit -c pyproject.toml -r src
 
 audit:
-    uv run pip-audit --skip-editable --ignore-vuln PYSEC-2026-3447
+    uv run pip-audit --skip-editable --ignore-vuln PYSEC-2026-3447 --ignore-vuln GHSA-xmj3-9gf7-h52w
 
 sbom:
     uv run cyclonedx-py environment --output-format JSON --outfile sbom.json
